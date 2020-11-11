@@ -1,0 +1,14 @@
+.App {
+  text-align: center;
+  width: 90vw;
+  max-width: 12in;
+  margin: 1em auto;
+}
+
+.App > :first-child {
+  margin-bottom: 1em;
+}
+
+.App img {
+  max-width: 100%;
+}
