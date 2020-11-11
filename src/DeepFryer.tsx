@@ -166,6 +166,7 @@ const DeepFryer: React.FC = () => {
       </React.Fragment>}
       <p>Made using <a href="https://github.com/mozilla/mozjpeg">mozjpeg</a>{' '}
         and <a href="https://emscripten.org">emscripten</a>.</p>
+      <p><a href="https://github.com/sheybey/deepfryer">Source code</a></p>
     </React.Fragment>);
   } else {
     return (<p>Loading...</p>);
