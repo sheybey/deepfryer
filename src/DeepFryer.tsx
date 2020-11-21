@@ -1,6 +1,6 @@
 import React from 'react';
 
-import moduleFactory, {DeepFryModule} from './deepfry';
+import moduleFactory, {DeepFryModule} from 'deepfry-encoder/deepfry';
 import ImagePicker from './ImagePicker';
 
 interface IRGBData {
