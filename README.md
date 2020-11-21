@@ -30,16 +30,15 @@ toolchain.
 
 ### compiling the application
 
-The app is compiled using React's normal toolchain. This presents an issue in
-that the default eslint settings are far stricter than the output emscripten
-produces. This can be worked around by symlinking the emscripten-compiled code
-into the source rather than copying it. Yes, I am aware that this is a dirty
-underhanded trick that never should have seen the light of day.
+The app is compiled using React's normal toolchain. The encoder is exposed as
+a module by symlinking it into node_modules. If you are not using the
+makefile, you can create this symlink manually:
 
-Once the encoder is compiled, the symlink that already exists in src will
-point to the compiled encoder. The only other thing you need to do before
-building is to copy the webassembly binary to `/public/static/js/`. Again,
-the [Makefile](./Makefile) does this if you want to see the exact steps.
+`cd node_modules && ln -s ../encoder deepfry-encoder`
+
+Once the encoder is compiled, the webassembly binary needs to be copied to
+`/public/static/js/` so it can be used at runtime. The [Makefile](./Makefile)
+does both of these things if you want to see the exact steps.
 
 Once you have compiled the encoder and copied the webassembly binary, you can
 just use the React build script: `npm run build`
