@@ -21,23 +21,11 @@ const DeepFryer: React.FC = () => {
 
   const defaultBrightness = 50;
   const [brightness, setBrightness] = React.useState(defaultBrightness);
+  const defaultSaturation = 0.25;
+  const [saturation, setSaturation] = React.useState(defaultSaturation);
   const defaultContrast = 128;
   const [contrast, setContrast] = React.useState(defaultContrast);
 
-  const adjustBrightness = React.useCallback((color: number) => {
-    if (brightness > 0) {
-      return Math.min(color + brightness, 255);
-    } else if (brightness < 0) {
-      return Math.max(color + brightness, 0);
-    } else {
-      return color;
-    }
-  }, [brightness]);
-
-  const adjustContrast = React.useCallback((color: number) => {
-    const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-    return Math.max(0, Math.min(255, factor * (color - 128) + 128));
-  }, [contrast]);
 
   React.useEffect(() => {
     let unmounted = false;
@@ -82,10 +70,8 @@ const DeepFryer: React.FC = () => {
       const rgbData = new Uint8ClampedArray(rgbaData.data.length * (3/4));
       let r = 0;
       for (let i = 0; i < rgbaData.data.length; i += 4) {
-        for (let j = 0; j < 3; j += 1) {
-          rgbData[r] = adjustContrast(adjustBrightness(rgbaData.data[i + j]));
-          r += 1;
-        }
+        rgbData.set(rgbaData.data.subarray(i, i + 3), r);
+        r += 3;
       }
 
       return {
@@ -98,8 +84,6 @@ const DeepFryer: React.FC = () => {
         throw new Error("jpeg compressor not initialized yet");
       }
 
-      const pixelFormat = 0;  // TJPF_RGB
-      const pitch = 0;
       const buffer = module._malloc(rgbData.data.length);
       module.HEAPU8.set(rgbData.data, buffer);
 
@@ -113,12 +97,18 @@ const DeepFryer: React.FC = () => {
       try {
         module.setValue(outputSizePtr, outputSize, "*");
 
-        /*int deepfry(const unsigned char *input, int width, int pitch, int height,
-        int pixel_format, unsigned char **output, unsigned long *output_size,
-        char const **error);*/
-        const result = module._deepfry(buffer, rgbData.width, pitch,
-          rgbData.height, pixelFormat, outputPtrPtr, outputSizePtr,
-          errorPtrPtr);
+        /*
+        void adjust(unsigned char *input, unsigned long pixels,
+            double saturation, int brightness, int contrast);
+        */
+        module._adjust(buffer, rgbData.data.length / 3,
+          saturation, brightness, contrast);
+        /*
+        int compress(const unsigned char *input, int width, int height,
+            unsigned char **output, unsigned long *output_size, char const **error);
+        */
+        const result = module._compress(buffer, rgbData.width, rgbData.height,
+          outputPtrPtr, outputSizePtr, errorPtrPtr);
 
         if (result === 1) {
           // success
@@ -158,6 +148,12 @@ const DeepFryer: React.FC = () => {
     return (<React.Fragment>
       <ImagePicker message={frying ? "Frying..." : "Upload an image to deep fry"}
         enabled={!frying} onImagePicked={onImagePicked}/>
+      <p>
+        <RangeInput min={-1} max={1} step={0.001} onSet={setSaturation}
+          initial={defaultSaturation}>
+          Saturation adjustment:
+        </RangeInput>
+      </p>
       <p>
         <RangeInput min={-128} max={128} onSet={setBrightness}
           initial={defaultBrightness}>
