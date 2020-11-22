@@ -15,8 +15,8 @@ int deepfry(const unsigned char *input, int width, int pitch, int height,
     }
 
     // compress image
-    unsigned char *jpeg_buffer;
-    unsigned long jpeg_size;
+    unsigned char *jpeg_buffer = NULL;
+    unsigned long jpeg_size = 0;
     if (0 != tjCompress2(compressor, input, width, pitch, height, TJPF_RGB,
         &jpeg_buffer, &jpeg_size, TJSAMP_420, 1,
         TJFLAG_FASTUPSAMPLE | TJFLAG_FASTDCT | TJFLAG_PROGRESSIVE)) {
