@@ -2,6 +2,7 @@ import React from 'react';
 
 import moduleFactory, {DeepFryModule} from 'deepfry-encoder/deepfry';
 import ImagePicker from './ImagePicker';
+import RangeInput from './RangeInput';
 
 interface IRGBData {
   data: Uint8ClampedArray;
@@ -18,10 +19,25 @@ const DeepFryer: React.FC = () => {
   const [deepFryError, setDeepFryError] = React.useState<string>();
   const [blobUrl, setBlobUrl] = React.useState<string>();
 
-  const [hyper, setHyper] = React.useState(true);
-  const contrastAdjust = 128;
-  const contrastFactor = (259 * (contrastAdjust + 255)) /
-    (255 * (259 - contrastAdjust));
+  const defaultBrightness = 50;
+  const [brightness, setBrightness] = React.useState(defaultBrightness);
+  const defaultContrast = 128;
+  const [contrast, setContrast] = React.useState(defaultContrast);
+
+  const adjustBrightness = React.useCallback((color: number) => {
+    if (brightness > 0) {
+      return Math.min(color + brightness, 255);
+    } else if (brightness < 0) {
+      return Math.max(color + brightness, 0);
+    } else {
+      return color;
+    }
+  }, [brightness]);
+
+  const adjustContrast = React.useCallback((color: number) => {
+    const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+    return Math.max(0, Math.min(255, factor * (color - 128) + 128));
+  }, [contrast]);
 
   React.useEffect(() => {
     let unmounted = false;
@@ -67,17 +83,7 @@ const DeepFryer: React.FC = () => {
       let r = 0;
       for (let i = 0; i < rgbaData.data.length; i += 4) {
         for (let j = 0; j < 3; j += 1) {
-          let color = rgbaData.data[i + j];
-          if (hyper) {
-            color = Math.min(color + 50, 255);
-            color = contrastFactor * (color - 128) + 128;
-            if (color > 255) {
-              color = 255;
-            } else if (color < 0) {
-              color = 0;
-            }
-          }
-          rgbData[r] = color;
+          rgbData[r] = adjustContrast(adjustBrightness(rgbaData.data[i + j]));
           r += 1;
         }
       }
@@ -143,21 +149,26 @@ const DeepFryer: React.FC = () => {
     });
   };
 
-  const onChangeHyper = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setHyper(event.currentTarget.checked);
-  };
-
   if (loadError) {
-    return (<p>Error:<br/><pre>{loadError}</pre></p>);
+    return (<React.Fragment>
+      <p>Error:</p>
+      <pre>{loadError}</pre>
+    </React.Fragment>);
   } else if (initialized) {
     return (<React.Fragment>
       <ImagePicker message={frying ? "Frying..." : "Upload an image to deep fry"}
         enabled={!frying} onImagePicked={onImagePicked}/>
       <p>
-        <label>
-          <input type="checkbox" checked={hyper} onChange={onChangeHyper}/>
-          Increase brightness and contrast ("hyper" effect)
-        </label>
+        <RangeInput min={-128} max={128} onSet={setBrightness}
+          initial={defaultBrightness}>
+          Brightness adjustment:
+        </RangeInput>
+      </p>
+      <p>
+        <RangeInput min={-255} max={255} onSet={setContrast}
+          initial={defaultContrast}>
+          Contrast adjustment:
+        </RangeInput>
       </p>
       {deepFryError && <p>Failed to deep fry: {deepFryError}</p>}
       {blobUrl && <React.Fragment>
