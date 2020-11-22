@@ -4,10 +4,11 @@ interface RangeInputProps {
   min: number,
   max: number,
   initial: number,
+  step?: number,
   onSet: (value: number) => void
 };
 
-const RangeInput: React.FC<RangeInputProps> = ({min, max, initial, onSet, children}) => {
+const RangeInput: React.FC<RangeInputProps> = ({min, max, initial, step, onSet, children}) => {
   const [text, setText] = React.useState(initial.toString());
   const [value, setValue] = React.useState(initial);
   
@@ -24,12 +25,12 @@ const RangeInput: React.FC<RangeInputProps> = ({min, max, initial, onSet, childr
     <label>
       {children}{' '}
       <input type="number" min={min} max={max} value={text} onChange={onChange}
-        size={3} step={1}/>
+        size={3} step={step ?? 1}/>
     </label>
     <br/>
     <small>{min}</small>
     <input type="range" min={min} max={max} value={value} onChange={onChange}
-      style={{verticalAlign: 'middle'}} step={1}/>
+      style={{verticalAlign: 'middle'}} step={step ?? 1}/>
     <small>{max}</small>
   </React.Fragment>;
 };
