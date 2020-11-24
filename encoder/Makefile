@@ -3,13 +3,14 @@ DF_CFLAGS += -O3
 DF_CFLAGS += -o deepfry.js
 
 DF_EMFLAGS += --pre-js=library.js
+DF_EMFLAGS += --extern-post-js=init.js
 DF_EMFLAGS += --closure=1
 DF_EMFLAGS += -s ASSERTIONS=1
 DF_EMFLAGS += -s WASM=1
 DF_EMFLAGS += -s MODULARIZE=1
 DF_EMFLAGS += -s EXPORT_NAME=moduleFactory
 DF_EMFLAGS += -s ALLOW_MEMORY_GROWTH=1
-DF_EMFLAGS += -s ENVIRONMENT=web
+DF_EMFLAGS += -s ENVIRONMENT=worker
 DF_EMFLAGS += -s EXPORTED_FUNCTIONS='["_adjust","_compress","_tjFree","_malloc","_free"]'
 DF_EMFLAGS += -s EXPORTED_RUNTIME_METHODS='["UTF8ToString","getValue","setValue"]'
 

@@ -1,8 +1,23 @@
 import React from 'react';
 
-import moduleFactory, {DeepFryModule} from 'deepfry-encoder/deepfry';
 import ImagePicker from './ImagePicker';
 import RangeInput from './RangeInput';
+
+
+interface DeepFryMessage {
+  data: ArrayBuffer;
+  width: number;
+  height: number;
+  saturation: number;
+  brightness: number;
+  contrast: number;
+};
+
+interface DeepFryResponse {
+  success: boolean,
+  error?: string,
+  jpeg?: ArrayBuffer
+};
 
 interface IRGBData {
   data: Uint8ClampedArray;
@@ -11,8 +26,9 @@ interface IRGBData {
 };
 
 const DeepFryer: React.FC = () => {
-  const [module, setModule] = React.useState<DeepFryModule>();
+  const [worker, ] = React.useState(() => new Worker('/static/js/deepfry.js'));
   const [loadError, setLoadError] = React.useState<string>();
+
   const [initialized, setInitialized] = React.useState(false);
 
   const [frying, setFrying] = React.useState(false);
@@ -28,23 +44,36 @@ const DeepFryer: React.FC = () => {
 
 
   React.useEffect(() => {
-    let unmounted = false;
-    moduleFactory({onRuntimeInitialized: () => {
-      if (!unmounted) {
-        setInitialized(true);
-      }
-    }}).then(setModule).catch((e) => setLoadError(e.toString()));
-    return () => {
-      unmounted = true;
-    };
-  }, []);
-
-
-  React.useEffect(() => {
     if (blobUrl) {
       return () => URL.revokeObjectURL(blobUrl);
     }
   }, [blobUrl]);
+
+  React.useEffect(() => {
+    const handleMessage = (msg: MessageEvent) => {
+      if (msg.data === 'initialized') {
+        setInitialized(true);
+      } else if ((typeof msg.data) === 'object') {
+        let response = msg.data as DeepFryResponse;
+        if (response.success && response.jpeg) {
+          var blob = new Blob([response.jpeg], {type: 'image/jpeg'});
+          setDeepFryError(undefined);
+          setBlobUrl(URL.createObjectURL(blob));
+        } else {
+          setDeepFryError(response.error ?? "Unknown error");
+        }
+        setFrying(false);
+      } else {
+        setLoadError(msg.data.error?.toString() ?? "Unknown error");
+      }
+    }
+    worker.addEventListener('message', handleMessage);
+
+    return () => {
+      worker.removeEventListener('message', handleMessage);
+      worker.terminate();
+    };
+  }, [worker]);
 
 
   const onImagePicked = (imgPromise: Promise<ImageBitmap>) => {
@@ -84,58 +113,17 @@ const DeepFryer: React.FC = () => {
         throw new Error("jpeg compressor not initialized yet");
       }
 
-      const buffer = module._malloc(rgbData.data.length);
-      module.HEAPU8.set(rgbData.data, buffer);
-
-      const outputPtr = module._malloc(4);
-      const outputPtrPtr = module._malloc(4);
-      const outputSize = module._malloc(4);
-      const outputSizePtr = module._malloc(4);
-
-      const errorPtrPtr = module._malloc(4);
-
-      try {
-        module.setValue(outputSizePtr, outputSize, "*");
-
-        /*
-        void adjust(unsigned char *input, unsigned long pixels,
-            double saturation, int brightness, int contrast);
-        */
-        module._adjust(buffer, rgbData.data.length / 3,
-          saturation, brightness, contrast);
-        /*
-        int compress(const unsigned char *input, int width, int height,
-            unsigned char **output, unsigned long *output_size, char const **error);
-        */
-        const result = module._compress(buffer, rgbData.width, rgbData.height,
-          outputPtrPtr, outputSizePtr, errorPtrPtr);
-
-        if (result === 1) {
-          // success
-          const begin = module.getValue(outputPtrPtr, "*");
-          const length = module.getValue(outputSizePtr, "i32");
-          const jpegBlob = new Blob([module.HEAPU8.subarray(
-            begin, begin + length)], {type: "image/jpeg"});
-          module._tjFree(begin);
-
-          setBlobUrl(URL.createObjectURL(jpegBlob));
-          setDeepFryError(undefined);
-        } else {
-          const errorStr = module.UTF8ToString(module.getValue(errorPtrPtr, "*"));
-          throw new Error(errorStr);
-        }
-      } finally {
-        module._free(buffer);
-        module._free(outputSizePtr);
-        module._free(outputSize);
-        module._free(outputPtr);
-        module._free(errorPtrPtr);
-      }
-
+      const msg: DeepFryMessage = {
+        data: rgbData.data.buffer,
+        width: rgbData.width,
+        height: rgbData.height,
+        saturation: saturation,
+        brightness: brightness,
+        contrast: contrast
+      };
+      worker.postMessage(msg, [rgbData.data.buffer]);
     }).catch((e) => {
       setDeepFryError(e.toString());
-    }).finally(() => {
-      setFrying(false);
     });
   };
 

@@ -23,3 +23,4 @@ yarn-debug.log*
 yarn-error.log*
 
 /public/static/js/deepfry.wasm
+/public/static/js/deepfry.js
