@@ -114,7 +114,7 @@ const DeepFryer: React.FC = () => {
         height: rgbaData.height
       };
     }).then((rgbData) => {
-      if (!module || !initialized) {
+      if (!initialized) {
         throw new Error("jpeg compressor not initialized yet");
       }
 
