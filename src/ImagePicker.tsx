@@ -4,7 +4,7 @@ import React from 'react';
 interface ImagePickerProps {
   message: string;
   enabled?: boolean;
-  onImagePicked: (imgPromise: Promise<ImageBitmap>) => void;
+  onImagePicked: (imageFile: File) => void;
 }
 
 const ImagePicker: React.FC<ImagePickerProps> = ({message, enabled, onImagePicked}) => {
@@ -15,22 +15,20 @@ const ImagePicker: React.FC<ImagePickerProps> = ({message, enabled, onImagePicke
 
   const [fileInput, ] = React.useState(document.createElement('input'));
 
-  const loadBlob = React.useCallback((file: Blob) => {
-    onImagePicked(createImageBitmap(file));
-    fileInput.value = '';
-  }, [onImagePicked, fileInput]);
-
   React.useEffect(() => {
     fileInput.type = "file";
     fileInput.accept = "image/*";
     const onChange = () => {
-      if (fileInput.files && fileInput.files.length > 0) {
-        loadBlob(fileInput.files[0]);
+      if (enabled && fileInput.files && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        if (file.type.match(/^image\//)) {
+          onImagePicked(file);
+        }
       }
     };
     fileInput.addEventListener("change", onChange);
     return () => fileInput.removeEventListener("change", onChange);
-  }, [fileInput, loadBlob]);
+  }, [fileInput, enabled, onImagePicked]);
 
   const dragHasImageFile = (event: React.DragEvent<HTMLElement>): DataTransferItem | undefined => {
     let items = event.dataTransfer.items;
@@ -39,7 +37,7 @@ const ImagePicker: React.FC<ImagePickerProps> = ({message, enabled, onImagePicke
     }
   }
 
-  const dropHasImageFile = (event: React.DragEvent<HTMLElement>): Blob | undefined => {
+  const dropHasImageFile = (event: React.DragEvent<HTMLElement>): File | undefined => {
     let files = event.dataTransfer.files;
     if (files && files.length > 0) {
       if (files[0].type.match(/^image\//)) {
@@ -75,7 +73,7 @@ const ImagePicker: React.FC<ImagePickerProps> = ({message, enabled, onImagePicke
     let file = dropHasImageFile(event);
     setValidFile(false);
     if (enabled && file) {
-      loadBlob(file);
+      onImagePicked(file);
     }
   };
 

@@ -76,24 +76,29 @@ const DeepFryer: React.FC = () => {
   }, [worker]);
 
 
-  const onImagePicked = (imgPromise: Promise<ImageBitmap>) => {
+  const onImagePicked = (imageFile: File) => {
     setFrying(true);
-    imgPromise.then((bitmap) => {
+    new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = document.createElement('img');
+      img.addEventListener('load', () => resolve(img));
+      img.addEventListener('error', () => reject("Failed to decode image"));
+      img.src = URL.createObjectURL(imageFile);
+    }).then((img) => {
       const canvas = document.createElement("canvas");
-      canvas.width = bitmap.width;
-      canvas.height = bitmap.height;
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
       const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        throw new Error("failed to create canvas context");
-      }
-
       try {
-        ctx.drawImage(bitmap, 0, 0);
-        return ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+        if (!ctx) {
+          throw new Error("failed to create canvas context");
+        }
+
+        ctx.drawImage(img, 0, 0);
+        return ctx.getImageData(0, 0, canvas.width, canvas.height);
       } catch (e) {
         throw new Error('unable to draw image: ' + e.toString());
       } finally {
-        bitmap.close();
+        URL.revokeObjectURL(img.src);
       }
     }).then((rgbaData): IRGBData => {
       const rgbData = new Uint8ClampedArray(rgbaData.data.length * (3/4));
@@ -123,7 +128,8 @@ const DeepFryer: React.FC = () => {
       };
       worker.postMessage(msg, [rgbData.data.buffer]);
     }).catch((e) => {
-      setDeepFryError(e.toString());
+      setDeepFryError(e?.toString() || "Unknown error");
+      setFrying(false);
     });
   };
 
