@@ -6,7 +6,7 @@ import DeepFryer from './DeepFryer';
 function App() {
   return (
     <div className="App">
-      {(window.Worker)
+      {(window.Worker && window.WebAssembly)
         ? (<DeepFryer/>)
         : (<p>Your browser does not support the APIs necessary to use this
           application. Try using <a href="https://mozilla.org/en-US/firefox">
