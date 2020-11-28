@@ -1,10 +1,10 @@
 # deepfryer
 
 This project runs images through a JPEG encoder, intentionally using the worst
-possible compression settings. This results in what is colloquially known as a
-"deep-fried" meme.
+possible compression settings and optionally oversaturating the colors. This
+results in what is colloquially known as a "deep-fried" meme.
 
-You can see a compiled version of this app at https://deepfry.heybey.tech
+You can see a live version of this app at https://deepfry.heybey.tech
 
 ## building (short version)
 
@@ -16,8 +16,7 @@ submodule init && git submodule update`). Install and activate
 
 The app is composed of two components: an encoder based on mozjpeg and a react
 web application. The encoder is compiled to javascript and webassembly using
-emscripten, then integrated with the react app and compiled using the react
-toolchain.
+emscripten, then loaded as a web worker at runtime by the application.
 
 ### compiling the encoder
 
@@ -30,17 +29,15 @@ toolchain.
 
 ### compiling the application
 
-The app is compiled using React's normal toolchain. The encoder is exposed as
-a module by symlinking it into node_modules. If you are not using the
-makefile, you can create this symlink manually:
+The app is compiled using React's normal toolchain and does not need to
+directly reference the encoder during compilation.. The compiled encoder is
+served as-is and loaded at runtime as a web worker.
 
-`cd node_modules && ln -s ../encoder deepfry-encoder`
+Once the encoder is compiled, the compiled javascript and webassembly need to
+be copied to `/public/static/js/` so they can be used at runtime. The
+[Makefile](./Makefile) does this if you want to see the exact steps.
 
-Once the encoder is compiled, the webassembly binary needs to be copied to
-`/public/static/js/` so it can be used at runtime. The [Makefile](./Makefile)
-does both of these things if you want to see the exact steps.
-
-Once you have compiled the encoder and copied the webassembly binary, you can
-just use the React build script: `npm run build`
+Once you have compiled the encoder and copied it you can just use the React
+build script: `npm run build`
 
 [emscripten]: https://emscripten.org/docs/getting_started/downloads.html
