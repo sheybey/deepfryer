@@ -95,7 +95,7 @@ const DeepFryer: React.FC = () => {
 
         ctx.drawImage(img, 0, 0);
         return ctx.getImageData(0, 0, canvas.width, canvas.height);
-      } catch (e) {
+      } catch (e: any) {
         throw new Error('unable to draw image: ' + e.toString());
       } finally {
         URL.revokeObjectURL(img.src);
