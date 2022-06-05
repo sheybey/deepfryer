@@ -1,4 +1,10 @@
-import React from 'react';
+import {
+  CSSProperties,
+  DragEvent,
+  FC,
+  useState,
+  useEffect,
+} from 'react';
 
 
 interface ImagePickerProps {
@@ -7,81 +13,101 @@ interface ImagePickerProps {
   onImagePicked: (imageFile: File) => void;
 }
 
-const ImagePicker: React.FC<ImagePickerProps> = ({message, enabled, onImagePicked}) => {
-  const [validFile, setValidFile] = React.useState(false);
+
+const IMAGE_MIME = /^image\//;
+
+const firstImageFromFileList = (files: FileList): File | undefined => {
+    for (const file of files) {
+    if (file.type.match(IMAGE_MIME)) {
+      return file;
+    }
+  }
+};
+
+const firstImageFromDataTransfer = (transfer: DataTransfer): File | undefined => {
+  for (const item of transfer.items) {
+    if (item.kind === "file" && item.type.match(IMAGE_MIME)) {
+      const file = item.getAsFile();
+      if (file) {
+        return file;
+      }
+    }
+  }
+
+  return firstImageFromFileList(transfer.files);
+};
+
+const ImagePicker: FC<ImagePickerProps> = ({message, enabled, onImagePicked}) => {
+  const [validFile, setValidFile] = useState(false);
   if (enabled === undefined) {
     enabled = true;
   }
 
-  const [fileInput, ] = React.useState(document.createElement('input'));
+  const [fileInput, ] = useState(document.createElement('input'));
 
-  React.useEffect(() => {
+  useEffect(() => {
     fileInput.type = "file";
     fileInput.accept = "image/*";
     const onChange = () => {
-      if (enabled && fileInput.files && fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        if (file.type.match(/^image\//)) {
-          onImagePicked(file);
-        }
+      const file = fileInput.files && firstImageFromFileList(fileInput.files);
+      if (file) {
+        onImagePicked(file);
       }
     };
     fileInput.addEventListener("change", onChange);
     return () => fileInput.removeEventListener("change", onChange);
   }, [fileInput, enabled, onImagePicked]);
 
-  const dragHasImageFile = (event: React.DragEvent<HTMLElement>): DataTransferItem | undefined => {
-    let items = event.dataTransfer.items;
-    if (items.length > 0 && items[0].kind === "file" && items[0].type.match(/^image\//)) {
-      return items[0];
-    }
-  }
-
-  const dropHasImageFile = (event: React.DragEvent<HTMLElement>): File | undefined => {
-    let files = event.dataTransfer.files;
-    if (files && files.length > 0) {
-      if (files[0].type.match(/^image\//)) {
-        return files[0];
+  useEffect(() => {
+    const onPaste = (event: ClipboardEvent) => {
+      if (event.clipboardData) {
+        const file = firstImageFromDataTransfer(event.clipboardData);
+        if (file) {
+          onImagePicked(file);
+        }
       }
-    }
-  }
+    };
 
-  const onDragEnter = (event: React.DragEvent<HTMLElement>) => {
+    document.addEventListener('paste', onPaste);
+    return () => document.removeEventListener('paste', onPaste);
+  }, [onImagePicked]);
+
+  const onDragEnter = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
-  }
+  };
 
-  const onDragOver = (event: React.DragEvent<HTMLElement>) => {
+  const onDragOver = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    if (enabled && dragHasImageFile(event)) {
+    if (enabled && firstImageFromDataTransfer(event.dataTransfer)) {
       setValidFile(true);
     } else {
       setValidFile(false);
     }
   };
 
-  const onDragLeave = (event: React.DragEvent<HTMLElement>) => {
+  const onDragLeave = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
     setValidFile(false);
   };
 
-  const onDrop = (event: React.DragEvent<HTMLElement>) => {
+  const onDrop = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    let file = dropHasImageFile(event);
+    const file = firstImageFromDataTransfer(event.dataTransfer);
     setValidFile(false);
     if (enabled && file) {
       onImagePicked(file);
     }
   };
 
-  const onClick = (event: React.MouseEvent<HTMLElement>) => {
+  const onClick = () => {
     fileInput.click();
   }
 
-  const style: React.CSSProperties = {
+  const style: CSSProperties = {
     lineHeight: 5,
     border: '2px solid currentColor',
     color: validFile ? "black" : "gray",
@@ -90,7 +116,7 @@ const ImagePicker: React.FC<ImagePickerProps> = ({message, enabled, onImagePicke
 
   return <div onDragEnter={onDragEnter} onDragOver={onDragOver}
     onDragLeave={onDragLeave} onDrop={onDrop} onClick={onClick} style={style}
-    title="Drag and drop an image, or click/tap to pick one to upload">
+    title="Paste or drag and drop an image, or click/tap to pick one to upload">
     {message}</div>;
 };
 

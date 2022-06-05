@@ -172,8 +172,8 @@ const DeepFryer: FC = () => {
     </>);
   } else if (initialized) {
     return (<>
-      <ImagePicker message={frying ? "Frying..." : "Upload an image to deep fry"}
-        enabled={!frying} onImagePicked={onImagePicked}/>
+      <ImagePicker enabled={!frying} onImagePicked={onImagePicked}
+        message={frying ? "Frying..." : "Paste or upload an image to deep fry"}/>
       <p>
         <RangeInput min={-1} max={1} step={0.001} onSet={setParameter(setSaturation)}
           initial={defaultSaturation}>
