@@ -1,16 +1,17 @@
-import React from 'react';
+import { FC, useState } from 'react';
 
 interface RangeInputProps {
-  min: number,
-  max: number,
-  initial: number,
-  step?: number,
-  onSet: (value: number) => void
+  min: number;
+  max: number;
+  initial: number;
+  step?: number;
+  onSet: (value: number) => void;
+  children?: React.ReactNode;
 };
 
-const RangeInput: React.FC<RangeInputProps> = ({min, max, initial, step, onSet, children}) => {
-  const [text, setText] = React.useState(initial.toString());
-  const [value, setValue] = React.useState(initial);
+const RangeInput: FC<RangeInputProps> = ({min, max, initial, step, onSet, children}) => {
+  const [text, setText] = useState(initial.toString());
+  const [value, setValue] = useState(initial);
   
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setText(event.currentTarget.value);
@@ -21,9 +22,9 @@ const RangeInput: React.FC<RangeInputProps> = ({min, max, initial, step, onSet, 
     }
   };
 
-  return <React.Fragment>
+  return <>
     <label>
-      {children}{' '}
+      {children && <>{children}{' '}</>}
       <input type="number" min={min} max={max} value={text} onChange={onChange}
         size={3} step={step ?? 1}/>
     </label>
@@ -32,7 +33,7 @@ const RangeInput: React.FC<RangeInputProps> = ({min, max, initial, step, onSet, 
     <input type="range" min={min} max={max} value={value} onChange={onChange}
       style={{verticalAlign: 'middle'}} step={step ?? 1}/>
     <small>{max}</small>
-  </React.Fragment>;
+  </>;
 };
 
 export default RangeInput;

@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC, useState, useEffect } from 'react';
 
 import ImagePicker from './ImagePicker';
 import RangeInput from './RangeInput';
@@ -25,31 +25,31 @@ interface IRGBData {
   height: number;
 };
 
-const DeepFryer: React.FC = () => {
-  const [worker, ] = React.useState(() => new Worker('/static/js/deepfry.js'));
-  const [loadError, setLoadError] = React.useState<string>();
+const DeepFryer: FC = () => {
+  const [worker, ] = useState(() => new Worker('/static/js/deepfry.js'));
+  const [loadError, setLoadError] = useState<string>();
 
-  const [initialized, setInitialized] = React.useState(false);
+  const [initialized, setInitialized] = useState(false);
 
-  const [frying, setFrying] = React.useState(false);
-  const [deepFryError, setDeepFryError] = React.useState<string>();
-  const [blobUrl, setBlobUrl] = React.useState<string>();
+  const [frying, setFrying] = useState(false);
+  const [deepFryError, setDeepFryError] = useState<string>();
+  const [blobUrl, setBlobUrl] = useState<string>();
 
   const defaultBrightness = 50;
-  const [brightness, setBrightness] = React.useState(defaultBrightness);
+  const [brightness, setBrightness] = useState(defaultBrightness);
   const defaultSaturation = 0.25;
-  const [saturation, setSaturation] = React.useState(defaultSaturation);
+  const [saturation, setSaturation] = useState(defaultSaturation);
   const defaultContrast = 128;
-  const [contrast, setContrast] = React.useState(defaultContrast);
+  const [contrast, setContrast] = useState(defaultContrast);
 
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (blobUrl) {
       return () => URL.revokeObjectURL(blobUrl);
     }
   }, [blobUrl]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleMessage = (msg: MessageEvent) => {
       if (msg.data === 'initialized') {
         setInitialized(true);
@@ -71,7 +71,6 @@ const DeepFryer: React.FC = () => {
 
     return () => {
       worker.removeEventListener('message', handleMessage);
-      worker.terminate();
     };
   }, [worker]);
 
@@ -134,12 +133,12 @@ const DeepFryer: React.FC = () => {
   };
 
   if (loadError) {
-    return (<React.Fragment>
+    return (<>
       <p>Error:</p>
       <pre>{loadError}</pre>
-    </React.Fragment>);
+    </>);
   } else if (initialized) {
-    return (<React.Fragment>
+    return (<>
       <ImagePicker message={frying ? "Frying..." : "Upload an image to deep fry"}
         enabled={!frying} onImagePicked={onImagePicked}/>
       <p>
@@ -161,14 +160,14 @@ const DeepFryer: React.FC = () => {
         </RangeInput>
       </p>
       {deepFryError && <p>Failed to deep fry: {deepFryError}</p>}
-      {blobUrl && <React.Fragment>
+      {blobUrl && <>
         <p><img src={blobUrl} alt="deep-fried goodness"/></p>
         <p><a download="deepfried.jpg" href={blobUrl}>download</a></p>
-      </React.Fragment>}
+      </>}
       <p>Made using <a href="https://github.com/mozilla/mozjpeg">mozjpeg</a>{' '}
         and <a href="https://emscripten.org">emscripten</a>.</p>
       <p><a href="https://github.com/sheybey/deepfryer">Source code</a></p>
-    </React.Fragment>);
+    </>);
   } else {
     return (<p>Loading...</p>);
   }

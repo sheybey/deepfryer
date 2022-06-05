@@ -1,9 +1,9 @@
-import React from 'react';
 import './App.css';
+import { FC } from 'react';
 
 import DeepFryer from './DeepFryer';
 
-function App() {
+const App: FC = () => {
   return (
     <div className="App">
       {(window.Worker && window.WebAssembly)
