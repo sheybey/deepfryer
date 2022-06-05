@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from 'react';
+import { FC, useState, useEffect, useCallback } from 'react';
 
 import ImagePicker from './ImagePicker';
 import RangeInput from './RangeInput';
@@ -32,6 +32,7 @@ const DeepFryer: FC = () => {
   const [initialized, setInitialized] = useState(false);
 
   const [frying, setFrying] = useState(false);
+  const [sourceFile, setSourceFile] = useState<File>();
   const [deepFryError, setDeepFryError] = useState<string>();
   const [blobUrl, setBlobUrl] = useState<string>();
 
@@ -42,6 +43,8 @@ const DeepFryer: FC = () => {
   const defaultContrast = 128;
   const [contrast, setContrast] = useState(defaultContrast);
 
+  const [refryTimer, setRefryTimer] = useState<ReturnType<typeof setTimeout>>();
+  const [shouldRefry, setShouldRefry] = useState(false);
 
   useEffect(() => {
     if (blobUrl) {
@@ -54,7 +57,7 @@ const DeepFryer: FC = () => {
       if (msg.data === 'initialized') {
         setInitialized(true);
       } else if ((typeof msg.data) === 'object') {
-        let response = msg.data as DeepFryResponse;
+        const response = msg.data as DeepFryResponse;
         if (response.success && response.jpeg) {
           var blob = new Blob([response.jpeg], {type: 'image/jpeg'});
           setDeepFryError(undefined);
@@ -74,8 +77,11 @@ const DeepFryer: FC = () => {
     };
   }, [worker]);
 
-
-  const onImagePicked = (imageFile: File) => {
+  const fryImage = useCallback((imageFile: File) => {
+    if (refryTimer) {
+      clearTimeout(refryTimer);
+      setRefryTimer(undefined);
+    }
     setFrying(true);
     new Promise<HTMLImageElement>((resolve, reject) => {
       const img = document.createElement('img');
@@ -130,6 +136,33 @@ const DeepFryer: FC = () => {
       setDeepFryError(e?.toString() || "Unknown error");
       setFrying(false);
     });
+  }, [refryTimer, worker, brightness, contrast, saturation, initialized]);
+
+  const setParameter = useCallback((dispatch: (v: number) => void) => (v: number) => {
+    dispatch(v);
+    if (refryTimer) {
+      clearTimeout(refryTimer);
+    }
+    if (sourceFile) {
+      setRefryTimer(setTimeout(() => {
+        setRefryTimer(undefined);
+        setShouldRefry(true);
+      }, 500));
+    }
+  }, [refryTimer, sourceFile]);
+
+  useEffect(() => {
+    if (shouldRefry) {
+      setShouldRefry(false);
+      if (sourceFile && !frying) {
+        fryImage(sourceFile);
+      }
+    }
+  }, [shouldRefry, sourceFile, frying, fryImage]);
+
+  const onImagePicked = (imageFile: File) => {
+    setSourceFile(imageFile);
+    fryImage(imageFile);
   };
 
   if (loadError) {
@@ -142,19 +175,19 @@ const DeepFryer: FC = () => {
       <ImagePicker message={frying ? "Frying..." : "Upload an image to deep fry"}
         enabled={!frying} onImagePicked={onImagePicked}/>
       <p>
-        <RangeInput min={-1} max={1} step={0.001} onSet={setSaturation}
+        <RangeInput min={-1} max={1} step={0.001} onSet={setParameter(setSaturation)}
           initial={defaultSaturation}>
           Saturation adjustment:
         </RangeInput>
       </p>
       <p>
-        <RangeInput min={-128} max={128} onSet={setBrightness}
+        <RangeInput min={-128} max={128} onSet={setParameter(setBrightness)}
           initial={defaultBrightness}>
           Brightness adjustment:
         </RangeInput>
       </p>
       <p>
-        <RangeInput min={-255} max={255} onSet={setContrast}
+        <RangeInput min={-255} max={255} onSet={setParameter(setContrast)}
           initial={defaultContrast}>
           Contrast adjustment:
         </RangeInput>
