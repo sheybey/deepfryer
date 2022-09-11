@@ -1,4 +1,4 @@
-build: src/*.ts src/*.tsx src/*.css encoder/deepfry.js node_modules
+dist: src/*.ts src/*.tsx src/*.css encoder/deepfry.js node_modules
 	npm run build
 
 node_modules: package.json
