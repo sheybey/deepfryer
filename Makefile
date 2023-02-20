@@ -1,14 +1,13 @@
-dist: src/*.ts src/*.tsx src/*.css encoder/deepfry.js node_modules
+dist: src/*.ts src/*.tsx src/*.css public/static/js/deepfry.js node_modules
 	npm run build
 
 node_modules: package.json
 	npm i
 
-encoder/deepfry.js:
+public/static/js/deepfry.js: encoder/deepfry.js
 	cd encoder && $(MAKE)
 	mkdir -p public/static/js
-	cp encoder/deepfry.wasm public/static/js/deepfry.wasm
-	cp encoder/deepfry.js public/static/js/deepfry.js
+	cp encoder/deepfry.wasm encoder/deepfry.js public/static/js/
 
 clean:
 	rm -rf build
