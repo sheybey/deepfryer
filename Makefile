@@ -4,8 +4,10 @@ dist: src/*.ts src/*.tsx src/*.css public/static/js/deepfry.js node_modules
 node_modules: package.json
 	npm i
 
-public/static/js/deepfry.js: encoder/deepfry.js
+encoder:
 	cd encoder && $(MAKE)
+
+public/static/js/deepfry.js: encoder
 	mkdir -p public/static/js
 	cp encoder/deepfry.wasm encoder/deepfry.js public/static/js/
 
@@ -18,4 +20,4 @@ clean:
 fullclean: clean
 	cd encoder && $(MAKE) fullclean
 
-.PHONY: clean fullclean
+.PHONY: clean fullclean encoder

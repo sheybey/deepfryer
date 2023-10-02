@@ -17,6 +17,7 @@ DF_EMFLAGS += -s EXPORTED_RUNTIME_METHODS='["UTF8ToString","getValue","setValue"
 MOZJPEG_CMAKEFLAGS += -DENABLE_SHARED=0
 MOZJPEG_CMAKEFLAGS += -DENABLE_STATIC=1
 MOZJPEG_CMAKEFLAGS += -DWITH_TURBOJPEG=1
+MOZJPEG_CMAKEFLAGS += -DWITH_SIMD=0
 MOZJPEG_CMAKEFLAGS += -DPNG_SUPPORTED=0
 
 MOZJPEG_BUILDDIR = mozjpeg-build
@@ -30,7 +31,7 @@ deepfry.js: deepfry.c deepfry.h library.js $(MOZJPEG_STATICLIB)
 $(MOZJPEG_STATICLIB): mozjpeg
 	mkdir -p $(MOZJPEG_BUILDDIR)
 	cd $(MOZJPEG_BUILDDIR) && emcmake cmake $(MOZJPEG_PATH) $(MOZJPEG_CMAKEFLAGS)
-	cd $(MOZJPEG_BUILDDIR) && $(MAKE)
+	cd $(MOZJPEG_BUILDDIR) && emmake $(MAKE) turbojpeg-static
 
 clean:
 	rm -f deepfry.wasm deepfry.js
