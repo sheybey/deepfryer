@@ -63,7 +63,7 @@ void adjust(unsigned char *input, unsigned long pixels,
         // if brightness has set the color to white, the other adjustments
         // will all be no-ops and can be skipped
         if (r != 255 || g != 255 || b != 255) {
-            // a saturation adjust or 0 or adjustment of a shade of gray is a
+            // a saturation adjust of 0 or adjustment of a shade of gray is a
             // no-op and can be skipped
             if (saturation != 0.0 && (r != g || g != b || r != b)) {
                 // normalize RGB values
