@@ -124,7 +124,7 @@ const DeepFryer: FC = () => {
       }
 
       const msg: DeepFryMessage = {
-        data: rgbData.data.buffer,
+        data: rgbData.data.buffer as ArrayBuffer,
         width: rgbData.width,
         height: rgbData.height,
         saturation: saturation,
