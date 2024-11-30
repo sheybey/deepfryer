@@ -1,4 +1,5 @@
 DF_CFLAGS += -Imozjpeg
+DF_CFLAGS += -Wall
 DF_CFLAGS += -O3
 DF_CFLAGS += -o deepfry.js
 
