@@ -42,6 +42,8 @@ const DeepFryer: FC = () => {
   const [saturation, setSaturation] = useState(defaultSaturation);
   const defaultContrast = 128;
   const [contrast, setContrast] = useState(defaultContrast);
+  const defaultMaxRes = 256;
+  const [maxRes, setMaxRes] = useState(defaultMaxRes);
 
   const [refryTimer, setRefryTimer] = useState<ReturnType<typeof setTimeout>>();
   const [shouldRefry, setShouldRefry] = useState(false);
@@ -89,17 +91,29 @@ const DeepFryer: FC = () => {
       img.addEventListener('error', () => reject("Failed to decode image"));
       img.src = URL.createObjectURL(imageFile);
     }).then((img) => {
+      let width = img.naturalWidth;
+      let height = img.naturalHeight;
+      if (width >= height && width > maxRes) {
+        const mult = maxRes / width;
+        width = maxRes;
+        height = Math.floor(mult * height);
+      } else if (height >= width && height > maxRes) {
+        const mult = maxRes / height;
+        height = maxRes;
+        width = Math.floor(mult * width);
+      }
+
       const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
+      canvas.width = width;
+      canvas.height = height;
       const ctx = canvas.getContext("2d");
       try {
         if (!ctx) {
           throw new Error("failed to create canvas context");
         }
 
-        ctx.drawImage(img, 0, 0);
-        return ctx.getImageData(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, width, height);
+        return ctx.getImageData(0, 0, width, height);
       } catch (e: any) {
         throw new Error('unable to draw image: ' + e.toString());
       } finally {
@@ -190,6 +204,12 @@ const DeepFryer: FC = () => {
         <RangeInput min={-255} max={255} onSet={setParameter(setContrast)}
           initial={defaultContrast}>
           Contrast adjustment:
+        </RangeInput>
+      </p>
+      <p>
+        <RangeInput min={10} max={1024} onSet={setParameter(setMaxRes)}
+          initial={maxRes}>
+          Maximum resolution:
         </RangeInput>
       </p>
       {deepFryError && <p>Failed to deep fry: {deepFryError}</p>}
